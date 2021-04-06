@@ -10,7 +10,7 @@
 
     <!-- 查询区域 -->
     <div class="table-page-search-wrapper">
-      <a-form layout="inline">
+      <a-form layout="inline" @keyup.enter.native="searchQuery">
         <a-row :gutter="24">
 
           <a-col :md="6" :sm="8">
@@ -178,12 +178,15 @@
     },
     methods: {
       getQueryParams(){
-        console.log(this.queryParam.createTimeRange)
         var param = Object.assign({}, this.queryParam,this.isorter);
         param.field = this.getQueryField();
         param.pageNo = this.ipagination.current;
         param.pageSize = this.ipagination.pageSize;
         delete param.createTimeRange; // 时间参数不传递后台
+        if (this.superQueryParams) {
+          param['superQueryParams'] = encodeURI(this.superQueryParams)
+          param['superQueryMatchType'] = this.superQueryMatchType
+        }
         return filterObj(param);
       },
 

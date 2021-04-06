@@ -3,7 +3,7 @@
 
     <!-- 查询区域 -->
     <div class="table-page-search-wrapper">
-      <a-form layout="inline">
+      <a-form layout="inline" @keyup.enter.native="searchQuery">
         <a-row :gutter="24">
 
           <a-col :md="6" :sm="10">
@@ -68,7 +68,10 @@
 
         <!-- 字符串超长截取省略号显示-->
         <span slot="description" slot-scope="text">
-          <j-ellipsis :value="text" :length="25" />
+          <j-ellipsis :value="text" :length="20" />
+        </span>
+        <span slot="parameterRender" slot-scope="text">
+          <j-ellipsis :value="text" :length="20" />
         </span>
 
 
@@ -80,6 +83,7 @@
           <a-dropdown>
             <a class="ant-dropdown-link">更多 <a-icon type="down" /></a>
             <a-menu slot="overlay">
+              <a-menu-item><a @click="executeImmediately(record)">立即执行</a></a-menu-item>
               <a-menu-item><a @click="handleEdit(record)">编辑</a></a-menu-item>
               <a-menu-item>
                 <a-popconfirm title="确定删除吗?" @confirm="() => handleDelete(record.id)">
@@ -151,12 +155,14 @@
           {
             title: '参数',
             align:"center",
-            dataIndex: 'parameter'
+            width: 150,
+            dataIndex: 'parameter',
+            scopedSlots: {customRender: 'parameterRender'},
           },
           {
             title: '描述',
             align:"center",
-            width: 300,
+            width: 250,
             dataIndex: 'description',
             scopedSlots: {customRender: 'description'},
           },
@@ -187,6 +193,7 @@
           resume: "/sys/quartzJob/resume",
           exportXlsUrl: "sys/quartzJob/exportXls",
           importExcelUrl: "sys/quartzJob/importExcel",
+          execute: "sys/quartzJob/execute"
         },
       }
     },
@@ -250,6 +257,25 @@
           }
         });
       },
+      executeImmediately(record){
+        var that = this;
+        //立即执行定时任务
+        this.$confirm({
+          title:"确认提示",
+          content:"是否立即执行任务?",
+          onOk: function(){
+            getAction(that.url.execute,{id:record.id}).then((res)=>{
+              if(res.success){
+                that.$message.success(res.message);
+                that.loadData();
+                that.onClearSelected();
+              }else{
+                that.$message.warning(res.message);
+              }
+            });
+          }
+        });
+      }
     }
   }
 </script>

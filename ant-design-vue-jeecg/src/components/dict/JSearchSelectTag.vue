@@ -4,12 +4,15 @@
     v-if="async"
     showSearch
     labelInValue
+    :disabled="disabled"
+    :getPopupContainer="getParentContainer"
     @search="loadData"
     :placeholder="placeholder"
     v-model="selectedAsyncValue"
     style="width: 100%"
     :filterOption="false"
     @change="handleAsyncChange"
+    allowClear
     :notFoundContent="loading ? undefined : null"
   >
     <a-spin v-if="loading" slot="notFoundContent" size="small"/>
@@ -18,13 +21,16 @@
 
   <a-select
     v-else
+    :getPopupContainer="getParentContainer"
     showSearch
+    :disabled="disabled"
     :placeholder="placeholder"
     optionFilterProp="children"
     style="width: 100%"
     @change="handleChange"
     :filterOption="filterOption"
     v-model="selectedValue"
+    allowClear
     :notFoundContent="loading ? undefined : null">
     <a-spin v-if="loading" slot="notFoundContent" size="small"/>
     <a-select-option v-for="d in options" :key="d.value" :value="d.value">{{ d.text }}</a-select-option>
@@ -33,7 +39,7 @@
 </template>
 
 <script>
-  import { ajaxGetDictItems } from '@/api/api'
+  import { ajaxGetDictItems,getDictItemsFromCache } from '@/api/api'
   import debounce from 'lodash/debounce';
   import { getAction } from '../../api/manage'
 
@@ -41,7 +47,7 @@
     name: 'JSearchSelectTag',
     props:{
       disabled: Boolean,
-      value: String,
+      value: [String, Number],
       dict: String,
       dictOptions: Array,
       async: Boolean,
@@ -49,6 +55,16 @@
         type:String,
         default:"请选择",
         required:false
+      },
+      popContainer:{
+        type:String,
+        default:'',
+        required:false
+      },
+      pageSize:{
+        type: Number,
+        default: 10,
+        required: false
       }
     },
     data(){
@@ -69,8 +85,12 @@
         immediate:true,
         handler(val){
           if(!val){
-            this.selectedValue=[]
-            this.selectedAsyncValue=[]
+            if(val==0){
+              this.initSelectValue()
+            }else{
+              this.selectedValue=[]
+              this.selectedAsyncValue=[]
+            }
           }else{
             this.initSelectValue()
           }
@@ -79,6 +99,14 @@
       "dict":{
         handler(){
           this.initDictData()
+        }
+      },
+      'dictOptions':{
+        deep: true,
+        handler(val){
+          if(val && val.length>0){
+            this.options = [...val]
+          }
         }
       }
     },
@@ -98,7 +126,7 @@
             })
           }
         }else{
-          this.selectedValue = this.value
+          this.selectedValue = this.value.toString()
         }
       },
       loadData(value){
@@ -108,7 +136,7 @@
         this.options = []
         this.loading=true
         // 字典code格式：table,text,code
-        getAction(`/sys/dict/loadDict/${this.dict}`,{keyword:value}).then(res=>{
+        getAction(`/sys/dict/loadDict/${this.dict}`,{keyword:value, pageSize: this.pageSize}).then(res=>{
           this.loading=false
           if(res.success){
             if(currentLoad!=this.lastLoad){
@@ -130,12 +158,40 @@
             this.options = [...this.dictOptions]
           }else{
             //根据字典Code, 初始化字典数组
-            ajaxGetDictItems(this.dict, null).then((res) => {
-              if (res.success) {
-                this.options = res.result;
-              }
-            })
+            let dictStr = ''
+            if(this.dict){
+                let arr = this.dict.split(',')
+                if(arr[0].indexOf('where')>0){
+                  let tbInfo = arr[0].split('where')
+                  dictStr = tbInfo[0].trim()+','+arr[1]+','+arr[2]+','+encodeURIComponent(tbInfo[1])
+                }else{
+                  dictStr = this.dict
+                }
+                if (this.dict.indexOf(",") == -1) {
+                  //优先从缓存中读取字典配置
+                  if (getDictItemsFromCache(this.dictCode)) {
+                    this.options = getDictItemsFromCache(this.dictCode);
+                    return
+                  }
+                }
+                ajaxGetDictItems(dictStr, null).then((res) => {
+                  if (res.success) {
+                    this.options = res.result;
+                  }
+                })
+            }
           }
+        }else{
+          //异步一开始也加载一点数据
+          this.loading=true
+          getAction(`/sys/dict/loadDict/${this.dict}`,{pageSize: this.pageSize, keyword:''}).then(res=>{
+            this.loading=false
+            if(res.success){
+              this.options = res.result
+            }else{
+              this.$message.warning(res.message)
+            }
+          })
         }
       },
       filterOption(input, option) {
@@ -147,9 +203,18 @@
         this.callback()
       },
       handleAsyncChange(selectedObj){
-        this.selectedAsyncValue = selectedObj
-        this.selectedValue = selectedObj.key
+        //update-begin-author:scott date:20201222 for:【搜索】搜索查询组件，删除条件，默认下拉还是上次的缓存数据，不好 JT-191
+        if(selectedObj){
+          this.selectedAsyncValue = selectedObj
+          this.selectedValue = selectedObj.key
+        }else{
+          this.selectedAsyncValue = null
+          this.selectedValue = null
+          this.options = null
+          this.loadData("")
+        }
         this.callback()
+        //update-end-author:scott date:20201222 for:【搜索】搜索查询组件，删除条件，默认下拉还是上次的缓存数据，不好 JT-191
       },
       callback(){
         this.$emit('change', this.selectedValue);
@@ -159,7 +224,14 @@
       },
       getCurrentDictOptions(){
         return this.options
-      }
+      },
+      getParentContainer(node){
+        if(!this.popContainer){
+          return node.parentNode
+        }else{
+          return document.querySelector(this.popContainer)
+        }
+      },
 
     },
     model: {

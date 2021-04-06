@@ -9,36 +9,32 @@
     :destroyOnClose="true"
     cancelText="关闭">
     <a-spin :spinning="confirmLoading">
-      <a-form :form="form">
+      <a-form-model ref="form" :model="model" :rules="validatorRules">
 
-        <a-form-item label="父级节点" :labelCol="labelCol" :wrapperCol="wrapperCol">
+        <a-form-model-item label="父级节点" :labelCol="labelCol" :wrapperCol="wrapperCol" prop="pid">
           <j-tree-select
             ref="treeSelect"
             placeholder="请选择父级节点"
-            v-decorator="['pid', validatorRules.pid]"
+            v-model="model.pid"
             dict="sys_category,name,id"
-            pidField="pid">
+            pidField="pid"
+            pidValue="0"
+           :disabled="disabled">
           </j-tree-select>
-        </a-form-item>
+        </a-form-model-item>
           
-        <a-form-item label="类型名称" :labelCol="labelCol" :wrapperCol="wrapperCol">
-          <a-input v-decorator="[ 'name', validatorRules.name]" placeholder="请输入类型名称"></a-input>
-        </a-form-item>
+        <a-form-model-item label="分类名称" :labelCol="labelCol" :wrapperCol="wrapperCol" prop="name">
+          <a-input v-model="model.name" placeholder="请输入分类名称"></a-input>
+        </a-form-model-item>
           
-        <a-form-item label="类型编码" :labelCol="labelCol" :wrapperCol="wrapperCol">
-          <a-input v-decorator="[ 'code', validatorRules.code]" placeholder="请输入类型编码"></a-input>
-        </a-form-item>
-          
-        
-      </a-form>
+      </a-form-model>
     </a-spin>
   </a-modal>
 </template>
 
 <script>
 
-  import { httpAction } from '@/api/manage'
-  import pick from 'lodash.pick'
+  import { httpAction,getAction } from '@/api/manage'
   import JTreeSelect from '@/components/jeecg/JTreeSelect'
   
   export default {
@@ -48,7 +44,6 @@
     },
     data () {
       return {
-        form: this.$form.createForm(this),
         title:"操作",
         width:800,
         visible: false,
@@ -64,42 +59,45 @@
 
         confirmLoading: false,
         validatorRules:{
-        pid:{},
-        name:{},
-        code:{},
+          pid:{},
+          name: [{ required: true, message: '请输入类型名称!' }]
         },
         url: {
           add: "/sys/category/add",
           edit: "/sys/category/edit",
+          checkCode:"/sys/category/checkCode",
         },
         expandedRowKeys:[],
-        pidField:"pid"
+        pidField:"pid",
+        subExpandedKeys:[]
      
       }
     },
     created () {
+    },
+    computed : {
+      disabled() {
+          return this.model.id?true : false;
+      }
     },
     methods: {
       add () {
         this.edit({});
       },
       edit (record) {
-        this.form.resetFields();
         this.model = Object.assign({}, record);
         this.visible = true;
-        this.$nextTick(() => {
-          this.form.setFieldsValue(pick(this.model,'pid','name','code'))
-        })
       },
       close () {
         this.$emit('close');
         this.visible = false;
+        this.$refs.form.resetFields();
       },
       handleOk () {
         const that = this;
         // 触发表单验证
-        this.form.validateFields((err, values) => {
-          if (!err) {
+        this.$refs.form.validate(valid => {
+          if (valid) {
             that.confirmLoading = true;
             let httpurl = '';
             let method = '';
@@ -110,12 +108,10 @@
               httpurl+=this.url.edit;
                method = 'put';
             }
-            let formData = Object.assign(this.model, values);
-            console.log("表单提交数据",formData)
-            httpAction(httpurl,formData,method).then((res)=>{
+            httpAction(httpurl,this.model,method).then((res)=>{
               if(res.success){
                 that.$message.success(res.message);
-                that.submitSuccess(formData)
+                that.submitSuccess(this.model)
               }else{
                 that.$message.warning(res.message);
               }
@@ -123,6 +119,8 @@
               that.confirmLoading = false;
               that.close();
             })
+          }else{
+            return false;
           }
          
         })
@@ -130,18 +128,18 @@
       handleCancel () {
         this.close()
       },
-      popupCallback(row){
-        this.form.setFieldsValue(pick(row,'pid','name','code'))
-      },
       submitSuccess(formData){
         if(!formData.id){
           let treeData = this.$refs.treeSelect.getCurrTreeData()
           this.expandedRowKeys=[]
           this.getExpandKeysByPid(formData[this.pidField],treeData,treeData)
+          if(formData.pid && this.expandedRowKeys.length==0){
+            this.expandedRowKeys = this.subExpandedKeys;
+          }
           this.$emit('ok',formData,this.expandedRowKeys.reverse());
         }else{
           this.$emit('ok',formData);
-        }
+      }
       },
       getExpandKeysByPid(pid,arr,all){
         if(pid && arr && arr.length>0){
@@ -154,9 +152,8 @@
             }
           }
         }
-      }
-      
-      
+      },
+
     }
   }
 </script>
