@@ -11,7 +11,7 @@ JEECG BOOT 低代码开发平台
 
 
 [![AUR](https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg)](https://github.com/zhangdaiscott/jeecg-boot/blob/master/LICENSE)
-[![](https://img.shields.io/badge/Author-北京国炬软件-orange.svg)](http://www.jeecg.com)
+[![](https://img.shields.io/badge/Author-北京敲敲云科技-orange.svg)](http://www.jeecg.com)
 [![](https://img.shields.io/badge/Blog-官方博客-blue.svg)](https://jeecg.blog.csdn.net)
 [![](https://img.shields.io/badge/version-3.4.4-brightgreen.svg)](https://github.com/zhangdaiscott/jeecg-boot)
 [![GitHub stars](https://img.shields.io/github/stars/zhangdaiscott/jeecg-boot.svg?style=social&label=Stars)](https://github.com/zhangdaiscott/jeecg-boot)
@@ -69,12 +69,13 @@ JeecgBoot 提供了一系列`低代码模块`，实现在线开发`真正的零�
 
 - 项目官网：  [http://www.jeecg.com](http://www.jeecg.com)
 
-- 在线演示 ： [Vue3版本](http://boot3.jeecg.com) | [Vue2版本](http://boot.jeecg.com) 
+- 在线演示 ：  [Vue3版本](http://boot3.jeecg.com) | [Vue2版本](http://boot.jeecg.com)  |  [敲敲云(零代码)](http://app.qiaoqiaoyun.com)
 
 - 开发文档：  [Vue3文档](http://vue3.jeecg.com) | [主项目文档](http://doc.jeecg.com) 
 
 - 新手指南： [快速入门](http://www.jeecg.com/doc/quickstart)  |   [常见问题 ](http://www.jeecg.com/doc/qa) |  [视频教程](https://space.bilibili.com/454617261/channel/series)  |  [1分钟体验低代码](https://my.oschina.net/jeecg/blog/3083313) 
 
+- 敲敲云平台(零代码)：  [http://qiaoqiaoyun.com](http://qiaoqiaoyun.com)
 
 - QQ交流群 ： ⑥730954414、VUE3群683903138、⑤860162132(满)、④774126647(满)、③816531124(满)、②769925425(满)、①284271917(满)
 > ` 提醒：【QQ群是自助服务群，建议给帮助您解决问题的同学发送指定红包，表示感谢！】 `
